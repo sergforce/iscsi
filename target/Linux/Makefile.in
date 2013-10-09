@@ -1,0 +1,8 @@
+#OS Specific files
+SPEC_FILES=$(OSSPEC_DIR)/tf_sg.c \
+	   $(OSSPEC_DIR)/th_sg.h \
+	   $(OSSPEC_DIR)/spec_linux.c \
+	   $(OSSPEC_DIR)/spec_linux.h \
+	   $(OSSPEC_DIR)/main.c
+
+
