@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-Wall
 LDFLAGS=
 
-#define DEBUG 
-#1
-#endef
+define DEBUG 
+1
+endef
 
 OS=$(shell uname)
 ARCH=$(shell uname -m)
@@ -17,7 +17,7 @@ CFLAGS+=-g -D_DEBUG -D_DEBUG2
 LDFLAGS+=-g
 else
 OBJDIR=$(OBJ)/$(OS)/obj-$(ARCH)
-CFLAGS+=-O2
+CFLAGS+=-O3 -fomit-frame-pointer -funroll-all-loops
 endif
 
 

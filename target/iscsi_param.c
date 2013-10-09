@@ -57,9 +57,9 @@ int paramcmp(const char *value, const char *x) {
 	return 0;
 }
 
-/*
+
 #define DUMP_PARAMS
-*/
+
 
 /******************************************************************************************/
 /* Version 0.1 style API */

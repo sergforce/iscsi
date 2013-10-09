@@ -20,12 +20,12 @@
 int doClient(SOCKET scli);
 int doClient2(SOCKET scli);
 
-/*
+
 #define DUMP_LOGIN_PDUS
-*/
-/*
+
+
 #define DUMP_RS
-*/
+
 
 struct World wrld;
 
@@ -37,12 +37,11 @@ int targetTest(void)
 	int addr_cli_len = sizeof(struct sockaddr_in);
 	struct sockaddr_in addr;
 	int res;
-	int maxBuff = 24 * 1024;
+	int maxBuff = 128 * 1024;
 	int nagle = 0;
 
 	SOCKET s;
 	SOCKET scli;
-	
 
 	initWorld(&wrld);
 
@@ -161,22 +160,6 @@ static void initDefParams(struct Param *params)
 	params[ISP_SESSIONTYPE].avalue = 0;
 }
 
-/*
-static struct Param *allocParams(struct World *wrld)
-{
-	struct Buffer *buff;
-
-	buff = allocBuff(wrld->buffAlloc, sizeof(struct Param) * TOTAL_DEF_PARAMS);
-	if (buff == NULL) {
-		DEBUG("allocParams: can't allocate params struct!\n");
-		return NULL;
-	}
-
-	initDefParams((struct Param *)buff->data);
-	return (struct Param *)buff->data;
-}
-*/
-
 /**********************************************************************************/
 /**********************************************************************************/
 
@@ -186,11 +169,7 @@ int initWorld(struct World *world)
 	struct tfClass *cls = knownClasses;
 	struct tfClass *wCls = world->apis;
 	int i;
-/*	struct AllocParam prm[2] = {		
-		{WORLD_BIG_BUFFER, 2, 2, 2},
-		{WORLD_SMALL_BUFFER, 2, 4, 2}
-	};
-*/
+
 	struct AllocParam prm[WORLD_BUFFALLOC_COUNT] = INIT_WORLD_BUFFALLOC;
 	
 	DEBUG("initWorld: Initializing world\n");
