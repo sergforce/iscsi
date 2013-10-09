@@ -31,6 +31,9 @@ struct miniportData {
 	int PathId;
 	int TargetId;
 	int Lun;	
+
+	int ReadOnly;
+
     HANDLE fileHandle;
 	IO_SCSI_CAPABILITIES capabilities;
 	char device[DEVICE_LEN];
@@ -43,6 +46,7 @@ struct miniportData {
 #define IOCTL_TARGETID		TEXT("TargetId")
 #define IOCTL_LUN			TEXT("Lun")
 
+#define IOCTL_READONLY		TEXT("ReadOnly")
 
 #endif
 

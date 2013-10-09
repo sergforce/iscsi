@@ -49,6 +49,7 @@
 #define IDC_PORTNUMBER                  1032
 #define IDC_PATHID                      1033
 #define IDC_TEXT_STATUS                 1035
+#define IDC_READONLY                    1036
 #define IDS_DEVICEOK                    2000
 
 // Next default values for new objects
@@ -57,7 +58,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1036
+#define _APS_NEXT_CONTROL_VALUE         1037
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -121,12 +121,17 @@ static int makeFrag(const char *origCmd, struct fragData *fd, char *newCmd)
 
 static int fillIoctlTargetData(struct confElement *head, struct miniportData *md)
 {
-	struct confElement *scsiPort, *pathId, *lun, *targetId, *deviceName;
+	struct confElement *scsiPort, *pathId, *lun, *targetId, *deviceName, *readOnly;
 
 	scsiPort = getElemInt(head, IOCTL_SCSIPORT, &md->ScsiPortNumber);
 	pathId = getElemInt(head, IOCTL_PATHID, &md->PathId);
 	lun = getElemInt(head, IOCTL_LUN, &md->Lun);
 	targetId = getElemInt(head, IOCTL_TARGETID, &md->TargetId);
+
+	readOnly = getElemInt(head, IOCTL_READONLY, &md->ReadOnly);
+	if (readOnly == NULL) {
+		md->ReadOnly = 0;
+	}
 
 	deviceName = findElement(head->childs, IOCTL_DEVICENAME);
 
@@ -220,6 +225,70 @@ int miniport_tfSCSICommand(struct tfCommand *cmd)
 		cmd->writedCount = 0;
 		cmd->senseLen = 0;
 		goto miniport_exit;
+	}
+
+	if (md->ReadOnly)	{
+		/* Doing read only check */
+		// Allowed commands
+		switch (cmd->cdbBytes[0]) {
+		case 0x18: //COPY
+		case 0x3A: //COPY AND VERIFY
+		case 0x07: //REASSIGN BLOCKS
+		case 0x1D: //SEND DIAGNOSTICS
+		case 0x33: //SET LIMITS
+		case 0xB3: //SET LIMITS 12
+
+		case 0x0A: //WRITE 6
+		case 0x2A: //WRITE 10
+		case 0xAA: //WRITE 12
+		case 0x2E: //WRITE AND VERIFY 10
+		case 0xAE: //WRITE AND VERIFY 12
+		case 0x3B: //WRITE BUFFER
+		case 0x3F: //WRITE LONG
+
+		case 0x2C: //ERASE
+		case 0xAC: //ERASE 12
+		case 0x04: //FORMAT UNIT
+
+/*
+			cmd->writedCount = cmd->writeCount;
+			cmd->readedCount = 0;
+			cmd->senseLen = 0;
+			cmd->response = 0;
+			cmd->status = 0;
+			goto miniport_exit;
+*/
+
+			/////////////////////////////////
+			cmd->response = 0;
+			cmd->readedCount = 0;
+			cmd->writedCount = 0;
+			cmd->senseLen = 14;
+
+			cmd->status = 0x22; //???
+			//cmd->status = 0x02; //???
+
+			cmd->sense[0] = 0x70; // ASC = 0x27  ASCQ = 0x00
+			cmd->sense[1] = 0;
+			cmd->sense[2] = 0x07;// DATAPROT
+			//cmd->sense[2] = 0x05;// DATAPROT
+			cmd->sense[3] = 0;
+			cmd->sense[4] = 0;
+			cmd->sense[5] = 0;
+			cmd->sense[6] = 0;
+			cmd->sense[7] = 7;//len
+			cmd->sense[8] = 0;
+			cmd->sense[9] = 0;
+			cmd->sense[10] = 0;
+			cmd->sense[11] = 0;
+			cmd->sense[12] = 0x27;//ASC
+			//cmd->sense[12] = 0x20;//ASC
+			cmd->sense[13] = 80;
+
+			DEBUG1("FORBIDED command %x\n", cmd->cdbBytes[0]);
+			goto miniport_exit;
+		}
+
 	}
 
     ppdwb->sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
@@ -323,6 +392,18 @@ nextSRB:
 			cmd->writeCount = 0;
 			cmd->readedCount = 0;
 		}	
+
+		if ((md->ReadOnly) && (cmd->status == 0)) {
+			if (ppdwb->sptd.Cdb[0] == 0x12) {
+				if ((ppdwb->sptd.Cdb[1] & 1) == 0) {
+					cmd->readBuffer->data[2] = 0x06;
+					cmd->readBuffer->data[5] |= 0x01; //Setup PROTECT bit					
+				} else if (ppdwb->sptd.Cdb[2] == 0x86) {
+				//	__asm int 3;
+				}
+			}
+		}
+
 
 	} else {
 		cmd->response = 1;

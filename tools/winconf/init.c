@@ -4,7 +4,7 @@
 /* #include "stdafx.h" */
 
 /* Internet Explorer 4.0 or higher required */
-#define _WIN32_IE	0x400
+#define _WIN32_IE		0x0400
 
 #include "../daemon/sock.h"
 #include "resource.h"
@@ -34,6 +34,7 @@
 
 #ifdef _MSC_VER
 #pragma comment (lib, "comctl32.lib")
+#pragma comment (lib, "advapi32.lib")
 #endif
 
 #define BUFF_SIZE		256
@@ -119,6 +120,11 @@ INT_PTR CALLBACK serviceDlg(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 static int InstallMyService(void);
 static int DeleteMyService(void);
+
+
+#define CheckBox_SetCheck(w,x)	SendMessage(w, BM_SETCHECK, (x) ? BST_CHECKED : BST_UNCHECKED, 0)
+#define CheckBox_GetCheck(w)	(SendMessage(w, BM_GETCHECK, 0, 0) == BST_CHECKED)
+
 
 int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -814,6 +820,7 @@ BOOL isValidTargetName(char *name)
 
 	while ((ch = *ptr) != 0) {
 		ch = tolower(ch);
+		*ptr = ch;
 		if (isValidChar(ch) == -1) {
 			return FALSE;
 		}
@@ -1399,7 +1406,7 @@ typedef struct tagIOCTLFULLTARGETDATA {
 	IOCTLTARGETDATA td;
 	BOOL addHDAInfo;
 	char device[DEVICE_LEN];
-	
+	BOOL readOnlySRB;
 } IOCTLFULLTARGETDATA, *LPIOCTLFULLTARGETDATA;
 
 #undef TLUN
@@ -1409,6 +1416,8 @@ typedef struct tagIOCTLFULLTARGETDATA {
 #define TPATHID			TEXT("PathID")
 #define TTARGETID		TEXT("TargetId")
 #define TLUN			TEXT("Lun")
+
+#define TREADONLY		TEXT("ReadOnly")
 
 static const char *winDevice[] = {
 	"\\\\.\\PhysicalDrive%d",
@@ -1543,7 +1552,7 @@ int ioctl_CheckSel(void *data, LPARAM lParam)
 static int ioctl_fillTargetData(struct configuration *cnf, struct confElement *parent, 
 								LPIOCTLFULLTARGETDATA fd)
 {
-	struct confElement *scsiPort, *pathId, *lun, *target, *deviceName;
+	struct confElement *scsiPort, *pathId, *lun, *target, *deviceName, *readOnlySRB;
 
 	deviceName = SetParamText(cnf, parent, TDEVICENAME, fd->device);
 	if (deviceName == NULL) {
@@ -1573,6 +1582,16 @@ static int ioctl_fillTargetData(struct configuration *cnf, struct confElement *p
 
 	target = SetParamInt(cnf, parent, TLUN, fd->td.Lun);
 	if (target == NULL) {
+		removeElement(cnf, lun);
+		removeElement(cnf, pathId);
+		removeElement(cnf, scsiPort);
+		removeElement(cnf, deviceName);
+		return -1;
+	}
+
+	readOnlySRB = SetParamInt(cnf, parent, TREADONLY, fd->readOnlySRB);
+	if (readOnlySRB == NULL) {
+		removeElement(cnf, target);
 		removeElement(cnf, lun);
 		removeElement(cnf, pathId);
 		removeElement(cnf, scsiPort);
@@ -1751,7 +1770,7 @@ int ioctl_addTarget(void *data, struct configuration *cnf, struct confElement *p
 
 static int ioctl_initPropDlg(HWND hwndDlg, LPDLGPROPDATA dlpd)
 {
-	struct confElement *scsiPort, *pathId, *lun, *target, *deviceName;
+	struct confElement *scsiPort, *pathId, *lun, *target, *deviceName, *readOnlySRB;
 	int value;
 
 	SetDlgItemText(hwndDlg, IDC_TARGETNAME, dlpd->el->name);
@@ -1785,6 +1804,12 @@ static int ioctl_initPropDlg(HWND hwndDlg, LPDLGPROPDATA dlpd)
 		SetDlgItemInt(hwndDlg, IDC_TARGET, (UINT)value, FALSE);
 	}
 
+	readOnlySRB = GetParamInt(dlpd->el, TREADONLY, &value);
+	if (readOnlySRB) {
+		CheckBox_SetCheck(GetDlgItem(hwndDlg, IDC_READONLY), value);
+	}
+	
+
 	return 0;
 }
 
@@ -1794,10 +1819,14 @@ int ioctl_PropDlgOnOk(HWND hwndDlg, LPDLGPROPDATA dlpd)
 	BOOL bScsiPort, bPathId, bLun, bTarget;
 	IOCTLFULLTARGETDATA fd;
 
+	//BOOL readOnlySRB;
+
 	scsiPort = GetDlgItemInt(hwndDlg, IDC_PORTNUMBER, &bScsiPort , FALSE);
 	pathId = GetDlgItemInt(hwndDlg, IDC_PATHID, &bPathId , FALSE);
 	lun = GetDlgItemInt(hwndDlg, IDC_LUN, &bLun , FALSE);
 	target = GetDlgItemInt(hwndDlg, IDC_TARGET, &bTarget , FALSE);
+
+	fd.readOnlySRB = CheckBox_GetCheck(GetDlgItem(hwndDlg, IDC_READONLY));
 
 	fd.td.Lun = (bLun) ? lun : 0;
 	fd.td.PathId = (bPathId) ? pathId : 0;
