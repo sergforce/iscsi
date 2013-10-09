@@ -6,7 +6,7 @@
 /* Internet Explorer 4.0 or higher required */
 #define _WIN32_IE		0x0400
 
-#include "../daemon/sock.h"
+#include "../../target/sock.h"
 #include "resource.h"
 
 #include <tchar.h>
@@ -24,12 +24,12 @@
 
 #include "exwin.h"
 
-#include "../daemon/dcirlist.h"
-#include "../daemon/iscsi_mem.h"
-#include "../daemon/conf_reader.h"
+#include "../../target/dcirlist.h"
+#include "../../target/iscsi_mem.h"
+#include "../../target/conf_reader.h"
 
-#include "../daemon/Win32/wnaspi/srbcmn.h"
-#include "../daemon/Win32/wnaspi/srb32.h"
+#include "../../target/Win32/wnaspi/srbcmn.h"
+#include "../../target/Win32/wnaspi/srb32.h"
 
 
 #ifdef _MSC_VER

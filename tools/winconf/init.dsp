@@ -92,15 +92,15 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\daemon\conf_reader.c
+SOURCE=..\..\target\conf_reader.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\daemon\Win32\conf_win.c
+SOURCE=..\..\target\Win32\conf_win.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\daemon\dcirlist.c
+SOURCE=..\..\target\dcirlist.c
 # End Source File
 # Begin Source File
 
@@ -112,7 +112,7 @@ SOURCE=.\init.rc
 # End Source File
 # Begin Source File
 
-SOURCE=..\daemon\iscsi_mem.c
+SOURCE=..\..\target\iscsi_mem.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -120,7 +120,7 @@ SOURCE=..\daemon\iscsi_mem.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\readPDUtest\conf_reader.h
+SOURCE=..\..\target\conf_reader.h
 # End Source File
 # Begin Source File
 

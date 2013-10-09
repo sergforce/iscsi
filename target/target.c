@@ -190,7 +190,7 @@ int initWorld(struct World *world)
 	}
 
 	world->trgs = findMain(&world->cnf, TARGETS);
-	if ((world->trgs == NULL) && (world->trgs->childs == NULL)) {
+	if ((world->trgs == NULL) || (world->trgs->childs == NULL)) {
 		DEBUG("No situable configuration found\n");
 		return -1;
 	}
