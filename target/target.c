@@ -87,8 +87,9 @@ int targetTest(void)
 
 		/* Creting thread 
 		doClient2(scli);*/
-	}
-	
+	} 
+
+	DEBUG("Error during accepting connections\n");
 
 	return 0;
 }

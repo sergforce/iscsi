@@ -76,7 +76,7 @@ struct tfClass {
 	const char *className;
 	void *handle;
 	
-	void *(*tfInit)(void);
+	void *(*tfInit)();
 	void (*tfCleanup)(void *handle);
 	void *(*tfAttach)(void *handle, struct Session *ses);
 	void (*tfDetach)(void *handle, void *attachedHandle);

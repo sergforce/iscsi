@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-Wall
 LDFLAGS=
 
-define DEBUG 
-1
-endef
+#define DEBUG 
+#1
+#endef
 
 OS=$(shell uname)
 ARCH=$(shell uname -m)

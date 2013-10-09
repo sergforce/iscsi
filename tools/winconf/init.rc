@@ -1,0 +1,257 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""init.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG DIALOGEX 0, 0, 246, 143
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Configuration iSCSI Target"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Add Target",IDC_ADDTRG,7,122,52,14
+    PUSHBUTTON      "&Check",IDC_CHECK,65,122,48,14,WS_DISABLED
+    PUSHBUTTON      "&Delete",IDC_DELETE,120,122,52,14,WS_DISABLED
+    PUSHBUTTON      "&Property",IDC_PROPERTY,178,122,60,14,WS_DISABLED
+    CONTROL         "List1",IDC_TARGETLIST,"SysListView32",LVS_REPORT | 
+                    LVS_SHOWSELALWAYS | WS_TABSTOP,7,7,231,109,
+                    WS_EX_CLIENTEDGE
+END
+
+IDD_SERVICE DIALOG DISCARDABLE  0, 0, 246, 143
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Stop",IDC_STOP,87,20,65,15
+    PUSHBUTTON      "Start",IDC_START,14,20,66,15
+    EDITTEXT        IDC_STATUS,86,46,141,12,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "Start at boot up",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | 
+                    WS_DISABLED | WS_TABSTOP,15,87,92,10
+    GROUPBOX        "Service",IDC_STATIC,7,7,232,61
+    LTEXT           "Satus:",IDC_TEXT_STATUS,15,47,62,11
+    GROUPBOX        "Settings",IDC_STATIC,7,73,232,63
+END
+
+IDD_PROP_ASPI DIALOG DISCARDABLE  0, 0, 176, 115
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ASPI Target property"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,64,93,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,119,93,50,14
+    EDITTEXT        IDC_TARGETNAME,71,7,98,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_HAID,71,28,98,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LUN,71,43,98,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_TARGET,71,59,98,13,ES_AUTOHSCROLL
+    LTEXT           "Host Adapter ID",IDC_STATIC,7,29,57,14
+    LTEXT           "LUN",IDC_STATIC,7,45,57,11
+    LTEXT           "Target",IDC_STATIC,7,61,57,11
+    LTEXT           "Target Name",IDC_STATIC,7,8,57,9
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,24,161,1
+END
+
+IDD_ADDDEVICE DIALOGEX 0, 0, 280, 220
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Add device"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,167,199,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,223,199,50,14
+    EDITTEXT        IDC_TARGETNAME,91,7,182,13,ES_AUTOHSCROLL
+    COMBOBOX        IDC_API,92,22,181,56,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Tree1",IDC_DEVICE,"SysTreeView32",TVS_HASBUTTONS | 
+                    TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | 
+                    WS_TABSTOP,7,40,266,154,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "&Rescan BUS",IDC_INQUIRY,7,199,76,14,WS_DISABLED
+    LTEXT           "API Level:",IDC_STATIC,7,23,80,13
+    LTEXT           "Target Name:",IDC_STATIC,7,7,81,13
+END
+
+IDD_PROP_IOCTL DIALOG DISCARDABLE  0, 0, 186, 131
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "IOCTL Target property"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,69,110,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,110,50,14
+    EDITTEXT        IDC_TARGETNAME,71,7,108,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_DEVICE,71,28,108,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PORTNUMBER,71,43,108,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PATHID,71,58,108,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LUN,71,73,108,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_TARGET,71,89,108,13,ES_AUTOHSCROLL
+    LTEXT           "Target Name",IDC_STATIC,7,8,57,9
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,24,172,1
+    LTEXT           "SCSI Port Number",IDC_STATIC,7,44,57,14
+    LTEXT           "LUN",IDC_STATIC,7,75,57,11
+    LTEXT           "Target",IDC_STATIC,7,91,57,11
+    LTEXT           "Device:",IDC_STATIC,7,30,61,11
+    LTEXT           "Path ID",IDC_STATIC,7,59,53,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 238
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 136
+    END
+
+    IDD_SERVICE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 239
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 136
+        HORZGUIDE, 20
+        HORZGUIDE, 35
+    END
+
+    IDD_PROP_ASPI, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 169
+        VERTGUIDE, 64
+        VERTGUIDE, 71
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 107
+    END
+
+    IDD_ADDDEVICE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 273
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 213
+    END
+
+    IDD_PROP_IOCTL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        VERTGUIDE, 71
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 124
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROP_DBCAPTION      "iSCSI Target Configuration"
+    IDS_CONFIG              "Config"
+    IDS_SERVICE             "Service"
+    IDS_SESSIONS            "Sesssions"
+    IDS_TARGETNAME          "Target Name"
+    IDS_APINAME             "Driver"
+    IDS_TARGETCONF          "Target configuration"
+    IDS_DEVTEST             "Device testing"
+    IDS_SERVCONTROL         "Service control"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ENDRV               "Cant configure target with this driver!"
+    IDS_ECANTCONFIGUER      "Can't configure new target! Too many target created."
+    IDS_EBADCONFIG          "Invalid config parameters! Reconfigure this target."
+    IDS_EDEVICEERROR        "Device does not exists or device error."
+    IDS_ENOTALLPARAM        "Some parameters need to be filled"
+    IDS_ECANTSTARTSERV      "Can't start service"
+    IDS_ECANTSTOPSERV       "Can't stop service"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_DEVICEOK            "Device is ok."
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "init.rc2"  // non-Microsoft Visual C++ edited resources
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
