@@ -7,7 +7,9 @@
 
 #include "service.h"
 
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
+#endif
 
 int targetTest(void);
 
@@ -114,7 +116,7 @@ void WINAPI ServiceStart (DWORD argc, LPTSTR *argv)
  
     if (ServiceStatusHandle == (SERVICE_STATUS_HANDLE)0) 
     { 
-        DEBUG1("RegisterServiceCtrlHandler failed %d\n", GetLastError()); 
+        DEBUG1("RegisterServiceCtrlHandler failed %ld\n", GetLastError()); 
         return; 
     } 
  
@@ -146,7 +148,7 @@ void WINAPI ServiceStart (DWORD argc, LPTSTR *argv)
     if (!SetServiceStatus (ServiceStatusHandle, &ServiceStatus)) 
     { 
         status = GetLastError(); 
-        DEBUG1("SetServiceStatus error %ld\n",status); 
+        DEBUG1("SetServiceStatus error %ld\n", status); 
     } 
  
     // This is where the service does its work. 
@@ -159,7 +161,7 @@ void WINAPI ServiceStart (DWORD argc, LPTSTR *argv)
 } 
 
 
-void main(int argc, char* argv[]) 
+int main(int argc, char* argv[]) 
 { 
    SERVICE_TABLE_ENTRY   DispatchTable[] = { 
       { SERVICE_NAME,	ServiceStart}, 
@@ -170,28 +172,29 @@ void main(int argc, char* argv[])
 #endif
 
    if (!StartServiceCtrlDispatcher(DispatchTable)) { 
-      DEBUG1("StartServiceCtrlDispatcher (%d)\n", GetLastError()); 
+      DEBUG1("StartServiceCtrlDispatcher (%ld)\n", GetLastError()); 
    } 
 
-
+   return 0;
 } 
 
 #else
 /* stanalone console version */
 
-void main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {	
 	WSADATA wsaData;
 	int err = WSAStartup(MAKEWORD(2,2), &wsaData);
 
 	if (err != 0) {
-		return;
+		return -1;
 	}
 
 #ifdef _DEBUG2	
 	initDebug(stdout);
 #endif
 	targetTest();
+	return 0;
 }
 
 

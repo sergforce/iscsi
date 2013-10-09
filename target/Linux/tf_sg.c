@@ -5,7 +5,6 @@
 #include "../tf.h"
 #include "../iscsi_param.h"
 #include "../conf_reader.h"
-#include "../param_helper.h"
 #include "../iscsi_session.h"
 
 #include <stdio.h>
@@ -16,6 +15,8 @@
 #include <stropts.h>
 #include <fcntl.h>
 #include <scsi/sg.h>
+
+static int sglinux_readSCSIStatus(int fd);
 
 void *sglinux_tfInit()
 {
@@ -44,7 +45,7 @@ void *sglinux_tfAttach(void *handle, struct Session *ses)
 		return NULL;
 	}
 	
-	sd.fd = open(devName->value, O_RDONLY); /* O_RDWR  in common application*/
+	sd.fd = open(devName->value, O_RDWR | O_NONBLOCK /*O_RDONLY | O_NONBLOCK*/); /* O_RDWR  in common application*/
 	if (sd.fd < 0) {
 		DEBUG1("sglinux_tfAttach: Can't open %s\n", devName->value);
 		return NULL;
@@ -86,6 +87,145 @@ int sglinux_tfSCSICommand(struct tfCommand *cmd)
 	sg_io_hdr_t io_hd;
 	int res;
 	int fd = (int)cmd->targetHandle;
+	
+	memset(&io_hd, 0, sizeof(sg_io_hdr_t));
+	io_hd.interface_id = 'S';
+	io_hd.cmd_len = getCommandLength(cmd->cdbBytes);
+	io_hd.mx_sb_len = cmd->senseLen;
+	io_hd.sbp = cmd->sense;
+	
+	io_hd.cmdp = cmd->cdbBytes;
+	io_hd.timeout = 20000;
+	
+	io_hd.iovec_count = 0;
+	io_hd.flags = 0;
+		
+	io_hd.usr_ptr = (void *)cmd;
+
+	/* Cyrrently supported only one LUN */
+	/*
+	if (cmd->lun > 0) {
+		cmd->response = 1;
+		cmd->readedCount = 0;
+		cmd->writedCount = 0;
+		cmd->senseLen = 0;
+		return sesSCSICmdResponse(cmd);
+	}*/
+	
+	if (cmd->writeCount > 0) {
+		io_hd.dxfer_direction = SG_DXFER_TO_DEV;
+		io_hd.dxferp = cmd->imWriteBuffer->data;
+		io_hd.dxfer_len = cmd->writeCount;
+	} else if (cmd->residualReadCount > 0) {
+		io_hd.dxfer_direction = SG_DXFER_FROM_DEV;
+		io_hd.dxferp = cmd->readBuffer->data;
+		io_hd.dxfer_len = cmd->residualReadCount;
+	} else {
+		io_hd.dxfer_direction = SG_DXFER_NONE;
+		io_hd.dxferp = NULL;
+		io_hd.dxfer_len = 0;
+	}
+
+	/*DEBUG1("sglinux_tfSCSICommand: SCSICommand %02x\n", cmd->cdbBytes[0]);*/
+	
+	/* Workaround for SPC-2 */
+	if (cmd->cdbBytes[0] == 0xa0) {
+		cmd->response = 0;
+		cmd->status = 0;
+		cmd->readedCount = cmd->residualReadCount;
+		cmd->writedCount = 0;
+		cmd->senseLen = 0;
+		memset(cmd->readBuffer->data, 0, cmd->residualReadCount);
+		cmd->readBuffer->data[3] = 8;
+		cmd->readBuffer->data[9] = 0x00;
+		return sesSCSICmdResponse(cmd);
+	}
+
+	
+	res = write(fd, &io_hd, sizeof(sg_io_hdr_t));
+	if (res != -1) {
+		return sesSCSIQueue(cmd);
+	} else {
+		DEBUG("sglinux_tfSCSICommand: can't write to dev ");
+		perror("");
+		cmd->response = 1;
+		cmd->readedCount = 0;
+		cmd->writedCount = 0;
+		cmd->senseLen = 0;
+		return sesSCSICmdResponse(cmd);
+	}
+}
+
+
+int sglinux_tfSetPollingDes(struct Session *ses)
+{
+	void *attachedHandle = ses->tfHandle;
+	int fd = (int)attachedHandle;
+	setWaitigFd(ses, fd, WAIT_FD_READ);
+	return 0;
+}
+
+int sglinux_tfCheckPollingDes(struct Session *ses)
+{
+	void *attachedHandle = ses->tfHandle;
+	int fd = (int)attachedHandle;
+
+	if (isSetWaitigFd(ses, fd, WAIT_FD_READ)) {
+		/*DEBUG("sglinux_tfCheckPollingDes: have data\n");*/
+		return sglinux_readSCSIStatus(fd);
+	}
+	return 0;
+}
+
+static int sglinux_readSCSIStatus(int fd)
+{
+	struct tfCommand *cmd;
+	sg_io_hdr_t io_hd;
+	int res = read(fd, &io_hd, sizeof(sg_io_hdr_t));
+		
+	if (res != -1) {
+		cmd = (struct tfCommand *)io_hd.usr_ptr;
+		cmd->senseLen = io_hd.sb_len_wr;
+		cmd->status = io_hd.masked_status;
+	
+		if ((io_hd.info & SG_INFO_OK_MASK) != SG_INFO_OK) {
+			if (io_hd.sb_len_wr > 0) {
+				cmd->response = 0;
+			} else {
+				cmd->response = 1;
+			}
+			cmd->writeCount = 0;
+			cmd->readedCount = 0;
+		} else {
+			cmd->response = 0;
+	
+			if ((cmd->writeCount > 0)) {
+				cmd->writedCount = cmd->writeCount;
+				cmd->readedCount = 0;
+			} else if (cmd->residualReadCount > 0) {
+				cmd->readedCount = cmd->residualReadCount;
+				cmd->writeCount = 0;
+			} else {
+				cmd->writeCount = 0;
+				cmd->readedCount = 0;
+			}
+		}
+	} else {
+		DEBUG("sglinux_tfReadSCSIStatus: read failed! ");
+		perror("");
+		return -1;
+	}
+	
+	return sesSCSIQueuedResponse(cmd);
+}
+
+
+#if 0
+int sglinux_tfSCSICommand(struct tfCommand *cmd)
+{
+	sg_io_hdr_t io_hd;
+	int res;
+	int fd = (int)cmd->targetHandle;
 	memset(&io_hd, 0, sizeof(sg_io_hdr_t));
 
 	io_hd.interface_id = 'S';
@@ -95,6 +235,9 @@ int sglinux_tfSCSICommand(struct tfCommand *cmd)
 	
 	io_hd.cmdp = cmd->cdbBytes;
 	io_hd.timeout = 20000;
+	
+	io_hd.iovec_count = 0;
+	io_hd.flags = SG_FLAG_DIRECT_IO;
 
 	/* Cyrrently supported only one LUN */
 	if (cmd->lun > 0) {
@@ -173,3 +316,4 @@ int sglinux_tfSCSICommand(struct tfCommand *cmd)
 sg_exit:
 	return sesSCSICmdResponse(cmd);
 }
+#endif

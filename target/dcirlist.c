@@ -86,6 +86,26 @@ struct DCirList *removeNode(struct DCirList *node, struct DCirList **listFrom)
 	return node;
 }
 
+void addToNodeBefore(struct DCirList *node, struct DCirList *to)
+{
+	struct DCirList *tmp = node->prev;
+	to->prev->next = node;
+	node->prev->next = to;
+
+	node->prev = to->prev;
+	to->prev = tmp;
+}
+/* FIXME Not checked!*/
+void addToNodeAfter(struct DCirList *node, struct DCirList *to)
+{
+	struct DCirList *tmp = node->next;
+	to->next->prev = node;
+	node->next->prev = to;
+
+	node->next = to->next;
+	to->next = tmp;
+}
+
 struct DCirList *addNode(struct DCirList *node, struct DCirList **listTo)
 {
 	struct DCirList *to = *listTo;
@@ -104,6 +124,7 @@ struct DCirList *addNode(struct DCirList *node, struct DCirList **listTo)
 	return to;
 }
 
+/* FIME Maybe serious errors!
 struct DCirList *addSNode(struct DCirList *node, struct DCirList **listTo)
 {
 	struct DCirList *to = *listTo;
@@ -121,7 +142,7 @@ struct DCirList *addSNode(struct DCirList *node, struct DCirList **listTo)
 	}
 	return to;
 }
-
+*/
 
 struct DCirList *moveNode(struct DCirList *node, struct DCirList **listFrom, struct DCirList **listTo)
 {

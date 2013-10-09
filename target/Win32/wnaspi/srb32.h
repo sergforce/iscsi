@@ -367,37 +367,37 @@ typedef struct tag_ASPI32BUFF                   // Offset
 }
 ASPI32BUFF, *PASPI32BUFF, FAR *LPASPI32BUFF;
 
-/**++SDK_32ONLY://*****************************************************************************++**/
-/**++SDK_32ONLY://          %%% PROTOTYPES - User Callable ASPI for Win32 Functions %%%++**/
-/**++SDK_32ONLY://*****************************************************************************++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:typedef void *LPSRB;++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:#if defined(__BORLANDC__)++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:DWORD _import GetASPI32SupportInfo( void );++**/
-/**++SDK_32ONLY:DWORD _import SendASPI32Command( LPSRB );++**/
-/**++SDK_32ONLY:BOOL _import GetASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:BOOL _import FreeASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:BOOL _import TranslateASPI32Address( PDWORD, PDWORD );++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:#elif defined(_MSC_VER)++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:__declspec(dllimport) DWORD GetASPI32SupportInfo( void );++**/
-/**++SDK_32ONLY:__declspec(dllimport) DWORD SendASPI32Command( LPSRB );++**/
-/**++SDK_32ONLY:__declspec(dllimport) BOOL GetASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:__declspec(dllimport) BOOL FreeASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:__declspec(dllimport) BOOL TranslateASPI32Address( PDWORD, PDWORD );++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:#else++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:extern DWORD GetASPI32SupportInfo( void );++**/
-/**++SDK_32ONLY:extern DWORD SendASPI32Command( LPSRB );++**/
-/**++SDK_32ONLY:extern BOOL GetASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:extern BOOL FreeASPI32Buffer( PASPI32BUFF );++**/
-/**++SDK_32ONLY:extern BOOL TranslateASPI32Address( PDWORD, PDWORD );++**/
-/**++SDK_32ONLY:++**/
-/**++SDK_32ONLY:#endif++**/
+//*****************************************************************************
+//          %%% PROTOTYPES - User Callable ASPI for Win32 Functions %%%
+//*****************************************************************************
+
+typedef void *LPSRB;
+
+#if defined(__BORLANDC__)
+
+DWORD _import GetASPI32SupportInfo( void );
+DWORD _import SendASPI32Command( LPSRB );
+BOOL _import GetASPI32Buffer( PASPI32BUFF );
+BOOL _import FreeASPI32Buffer( PASPI32BUFF );
+BOOL _import TranslateASPI32Address( PDWORD, PDWORD );
+
+#elif defined(_MSC_VER)
+
+__declspec(dllimport) DWORD GetASPI32SupportInfo( void );
+__declspec(dllimport) DWORD SendASPI32Command( LPSRB );
+__declspec(dllimport) BOOL GetASPI32Buffer( PASPI32BUFF );
+__declspec(dllimport) BOOL FreeASPI32Buffer( PASPI32BUFF );
+__declspec(dllimport) BOOL TranslateASPI32Address( PDWORD, PDWORD );
+
+#else
+
+extern DWORD GetASPI32SupportInfo( void );
+extern DWORD SendASPI32Command( LPSRB );
+extern BOOL GetASPI32Buffer( PASPI32BUFF );
+extern BOOL FreeASPI32Buffer( PASPI32BUFF );
+extern BOOL TranslateASPI32Address( PDWORD, PDWORD );
+
+#endif
 
 /*
 ** Restore compiler default packing and close off the C declarations.

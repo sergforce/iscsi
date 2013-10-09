@@ -1,12 +1,16 @@
 #ifndef __ISCSI_MEM_H_
 #define __ISCSI_MEM_H_
 
+
+#define FULL_BUFF_LENGTH	80
+#define DUMMY_BUFF_LENGTH	((FULL_BUFF_LENGTH) - 3*sizeof(void*) - 2*sizeof(uint32_t))
+
 struct _Buffer {
 	struct DCirList list;
 	struct BufferAllocator *belong;
 	uint32_t maxLength;
 	uint32_t length;
-	uint8_t _data[44];
+	uint8_t _data[DUMMY_BUFF_LENGTH];
 };
 
 struct Buffer {
@@ -14,7 +18,7 @@ struct Buffer {
 	struct BufferAllocator *belong;
 	uint32_t maxLength;
 	uint32_t length;
-	uint8_t _data[44];
+	uint8_t _data[DUMMY_BUFF_LENGTH];
 	uint8_t data[1];
 };
 
@@ -68,7 +72,7 @@ int bufferAllocatorInit(struct BufferAllocator *ba, struct AllocParam *prm, uint
 struct BufferAllocator *bufferAllocatorCreate(struct AllocParam *prm, uint32_t sizeCounts);
 struct Buffer *allocBuff(struct BufferAllocator *ba, uint32_t size);
 int freeBuff(struct Buffer *buff);
-void bufferAllocatorClean(struct BufferAllocator *ba);
+void bufferAllocatorClean(struct BufferAllocator *ba, unsigned int count);
 
 
 #endif

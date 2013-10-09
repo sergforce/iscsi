@@ -59,29 +59,47 @@ struct tfCommand {
 	void *classHandle;
 };
 
+#define TF_FLAG_USE_FD_POLLING		0x01
+
+struct tfManagement {
+	void *handle;
+	void *attachedHandle;
+	int manFunction;
+	struct tfCommand *ref_cmd;
+	uint64_t lun;
+	
+	/* private usage */
+	struct Session *ses;
+};
+
 struct tfClass {
 	const char *className;
 	void *handle;
-
-/*	
-	int (*tfSCSIManagement)(void *prot, int function, struct tfCommand *ref_cmd, uint64_t lun, void *priv);
-*/
-	void *(*tfInit)();
+	
+	void *(*tfInit)(void);
 	void (*tfCleanup)(void *handle);
 	void *(*tfAttach)(void *handle, struct Session *ses);
-	void (*tfDetach)(void *handle, void *prot);
+	void (*tfDetach)(void *handle, void *attachedHandle);
 
 	int (*tfSCSICommand)(struct tfCommand *cmd);
-
-/*	const char *(*tfGetModuleInfo)(int what);*/
+	int (*tfSCSIManagement)(struct tfManagement *tfmc);
+	
+	const char *(*tfGetModuleInfo)(int what);
+	
+	/* extenitions for *nix systems */
+	unsigned int flags;
+	/*int (*tfReadSCSIStatus)(int fd);*/
+	int (*tfSetPollingDes)(struct Session *ses);
+	int (*tfCheckPollingDes)(struct Session *ses);
 };
 
 #define END_OF_CLASS_INITIALIZATOR \
-{ NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+{ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, \
+ 0, NULL, NULL}
 
 int sesSCSICmdResponse(struct tfCommand *cmd);
 int sesSCSIQueue(struct tfCommand *cmd);
-
+int sesSCSIQueuedResponse(struct tfCommand *cmd);
 
 #define MAX_TFCLASES	4
 

@@ -86,7 +86,12 @@ int AllocBuffers(struct BufferAllocator *ba)
 			ba->frees += i;
 			return (-(int)i);
 		}
-		addSNode((struct DCirList *)nb, (struct DCirList **)&ba->buffFree);
+		nb->list.next = (struct DCirList *)nb;
+		nb->list.prev = (struct DCirList *)nb;
+		
+		/*addSNode((struct DCirList *)nb, (struct DCirList **)&ba->buffFree);*/
+		addNode((struct DCirList *)nb, (struct DCirList **)&ba->buffFree);
+		
 		nb->belong = ba;
 		nb->length = 0;
 		nb->maxLength = ba->ap.maxLength;
@@ -129,7 +134,7 @@ int bufferAllocatorInit(struct BufferAllocator *ba, struct AllocParam *prm, uint
 	if (res > 0) {
 		return 0;
 	} else {
-		bufferAllocatorClean(ba);
+		bufferAllocatorClean(ba, sizeCounts);
 		return -1;
 	}
 }
@@ -215,14 +220,12 @@ int freeBuff(struct Buffer *buff)
 	return (bu == NULL);
 }
 
-
-
-void bufferAllocatorClean(struct BufferAllocator *ba)
+void bufferAllocatorCleanBuffers(struct BufferAllocator *ba)
 {
 	struct Buffer *b;
 
 	if (ba->buffUsed != NULL) {
-		DEBUG1("bufferAllocatorClean: %d blocks are used!\n", ba->useds); 
+		DEBUG1("bufferAllocatorCleanBuffers: %d blocks are used!\n", ba->useds); 
 	}
 	
 	while (ba->buffUsed != NULL) {
@@ -247,6 +250,13 @@ void bufferAllocatorClean(struct BufferAllocator *ba)
 
 }
 
+
+void bufferAllocatorClean(struct BufferAllocator *ba, unsigned int count)
+{
+	for (; count > 0; count--) {
+		bufferAllocatorCleanBuffers(&ba[count - 1]);
+	}
+}
 
 
 

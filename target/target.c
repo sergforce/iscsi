@@ -12,15 +12,7 @@
 #include <stdlib.h>
 
 #include "debug/iscsi_debug.h"
-/*
-#ifdef WIN32
-#include "Win32/tf_miniport.h"
-#include "Win32/tf_aspi.h"
-#include "Win32/service.h"
-#endif
-*/
 
-/*#include "spec.h"*/
 #include "target_conf.h"
 
 #define ISCSI_PORT 3260
@@ -31,22 +23,13 @@ int doClient2(SOCKET scli);
 /*
 #define DUMP_LOGIN_PDUS
 */
-
-/* extern struct tfClass *knownClasses; */
+/*
+#define DUMP_RS
+*/
 
 struct World wrld;
 
 static struct InetConnection *allocInetConnection(struct World *wrld, SOCKET scli);
-
-/*
-static struct tfClass knownClasses[] = {
-#ifdef WIN32
-	MINIPORT_CLASS_INITIALIZATOR,
-	ASPI_CLASS_INITIALIZATOR,
-#endif	
-	END_OF_CLASS_INITIALIZATOR
-};
-*/
 
 int targetTest(void)
 {
@@ -54,7 +37,7 @@ int targetTest(void)
 	int addr_cli_len = sizeof(struct sockaddr_in);
 	struct sockaddr_in addr;
 	int res;
-	int maxBuff = 65536*2;
+	int maxBuff = 24 * 1024;
 	int nagle = 0;
 
 	SOCKET s;
@@ -70,6 +53,10 @@ int targetTest(void)
 	addr.sin_port = htons(ISCSI_PORT);
 	addr.sin_addr.s_addr = INADDR_ANY;
 
+	res = 1;
+	res = setsockopt(s, IPPROTO_TCP, SO_REUSEADDR, (char*)&res, sizeof(int));	
+
+		
 	res = bind(s, (struct sockaddr*)&addr, sizeof(addr));
 	if (res < 0) { 
 		DEBUG("Can't bind\n");
@@ -92,7 +79,7 @@ int targetTest(void)
 	while ((scli = accept(s, (struct sockaddr*)&addr_cli, &addr_cli_len)) != -1) {
 		/*Printing accepted from*/		
 
-		DEBUG1("Accepted connection from %x\n", ntohl(addr_cli.sin_addr.s_addr));
+		DEBUG1("Accepted connection from %x\n", (unsigned int)ntohl(addr_cli.sin_addr.s_addr));
 		
 		setsockopt(scli, IPPROTO_TCP, TCP_NODELAY, (char*)&nagle, sizeof(int));
 
@@ -199,11 +186,13 @@ int initWorld(struct World *world)
 	struct tfClass *cls = knownClasses;
 	struct tfClass *wCls = world->apis;
 	int i;
-	struct AllocParam prm[2] = {		
+/*	struct AllocParam prm[2] = {		
 		{WORLD_BIG_BUFFER, 2, 2, 2},
 		{WORLD_SMALL_BUFFER, 2, 4, 2}
 	};
-
+*/
+	struct AllocParam prm[WORLD_BUFFALLOC_COUNT] = INIT_WORLD_BUFFALLOC;
+	
 	DEBUG("initWorld: Initializing world\n");
 	world->sesions = NULL;
 
@@ -212,7 +201,7 @@ int initWorld(struct World *world)
 
 	initWorldMutex(world);
 
-	bufferAllocatorInit(world->buffAlloc, prm, 2);
+	bufferAllocatorInit(world->buffAlloc, prm, WORLD_BUFFALLOC_COUNT);
 
 	/* Init configuration */
 	i = initConfiguration(&world->cnf);
@@ -288,6 +277,7 @@ static struct InetConnection *allocInetConnection(struct World *wrld, SOCKET scl
 
 	counterInit(&conn->recvStatSN, 0);
 	conn->statSN = 0;
+	
  /* conn->targetInfo = NULL; */
 	conn->scli = scli;
 	return conn;
@@ -341,6 +331,8 @@ static struct Session *allocSession(struct InetConnection *ic)
 	
 	ses->errorRecoveryLevel = 0;
 
+	ses->pendingCommands = 0;
+		
 	FD_ZERO(&ses->rop);
 	FD_ZERO(&ses->wop);
 
@@ -852,7 +844,7 @@ int doClient2(SOCKET scli)
 	}
 	
 	lockWorld(&wrld);
-	bufferAllocatorClean(ses->buffAlloc);
+	bufferAllocatorClean(ses->buffAlloc, SESSION_BUFFER_CLASSES);
 	freeBuff(memToBuff(ses->params));
 
 	freeBuff(memToBuff(ses));
@@ -868,22 +860,156 @@ int doClient2(SOCKET scli)
 /*
 #define DUMP_RS
 */
+int setWaitigFd(struct Session *ses, SOCKET fd, int typeRW)
+{
+	if (ses->maxfd <= fd) {
+		ses->maxfd = fd + 1;
+	}
+	
+	if (typeRW == WAIT_FD_WRITE) /* Write OP */ {
+		FD_SET(fd, &ses->wop);
+	} else {
+		FD_SET(fd, &ses->rop);
+	}
+	return 0;
+}
 
+int cleanWaitigFd(struct Session *ses, SOCKET fd, int typeRW)
+{
+	if (typeRW == WAIT_FD_WRITE) /* Write OP */ {
+		FD_CLR(fd, &ses->wop);
+	} else {
+		FD_CLR(fd, &ses->rop);
+	}
+	return 0;
+}
+
+int isSetWaitigFd(struct Session *ses, SOCKET fd, int typeRW)
+{
+	if (typeRW == WAIT_FD_WRITE) /* Write OP */ {
+		return FD_ISSET(fd, &ses->wop);
+	} else {
+		return FD_ISSET(fd, &ses->rop);
+	}
+}
+
+int initWaitigFd(struct Session *ses)
+{
+	FD_ZERO(&ses->wop);
+	FD_ZERO(&ses->rop);
+	ses->maxfd = 0;
+	return 0;
+}
+
+#define MAX_CMD 8
+
+int doConnection(struct InetConnection *conn)
+{
+	struct Session *ses = conn->member;
+	int res;
+	struct tfClass *tfApi = &ses->cclass;
+	int extPolling = ((tfApi->flags & TF_FLAG_USE_FD_POLLING) == TF_FLAG_USE_FD_POLLING);
+	initWaitigFd(ses);
+
+	for (;;) {
+		setWaitigFd(ses, conn->scli, WAIT_FD_READ);
+		if (extPolling) {
+			tfApi->tfSetPollingDes(ses);
+		}
+		
+		if (conn->sockNeedToWrite == 1) {
+			setWaitigFd(ses, conn->scli, WAIT_FD_WRITE);
+		} else {
+			cleanWaitigFd(ses, conn->scli, WAIT_FD_WRITE);
+		}
+		
+		res = select(ses->maxfd, &ses->rop, &ses->wop, NULL, NULL);
+#ifdef DUMP_RS
+		DEBUG("Selecting\n");
+#endif
+		if (ses->pendingCommands > 1) {
+			DEBUG1("Queued commands: %d\n", ses->pendingCommands);
+		}
+		
+		if (isSetWaitigFd(ses, conn->scli, WAIT_FD_READ) && 
+		(ses->pendingCommands < MAX_CMD)) {
+
+			if (res > 0) { /* some sockets are ready */
+				res = recivePDU(conn);
+				/* if res == 0 need more data */
+				if (res == 1) {
+					/* reciving complete */		
+#ifdef DUMP_RS					
+					DEBUG("Reciving complete\n");
+#endif
+				} else if (res == 0) {
+					/* continue */
+					continue;
+				} else {
+					/* error! */
+					return -1;
+				}
+			} else {
+				DEBUG("Select returned <= 0\n");
+				return -1;
+			}
+		} else if (isSetWaitigFd(ses, conn->scli, WAIT_FD_WRITE) && conn->sockNeedToWrite) {
+		/*if (FD_ISSET(conn->scli, &ses->wop)) {*/
+			if (res > 0) { /* some sockets are ready */
+				res = sendPDU(conn);
+				/* if res == 0 need more data */
+				if (res > 0) {
+					/* reciving complete */	
+#ifdef DUMP_RS					
+					DEBUG("Sending complete\n");
+#endif
+				} else if (res == 0) {
+					/* continue */
+#ifdef DUMP_RS
+					DEBUG("Sending return 0\n");
+#endif					
+					continue;
+				} else if (res == RWOP_SHUTDOWN) {
+					DEBUG3("Readed: "LONG_FORMAT" bytes (%.2f Mb), "LONG_FORMAT" PDUs\n", ses->bytes_read,
+						((double)ses->bytes_read / (1024*1024)), ses->pdus_recv);
+					DEBUG3("Writed: "LONG_FORMAT" bytes (%.2f Mb), "LONG_FORMAT" PDUs\n", ses->bytes_write,
+						((double)ses->bytes_write / (1024.0*1024.0)), ses->pdus_sent);
+					DEBUG("Closing session\n");
+					/*close(conn->scli);*/
+					return 0;
+				} else {
+#ifdef DUMP_RS				
+					DEBUG("Sending error!\n");
+#endif					
+					/* error! */
+					return -1;
+				}
+
+			} else {
+#ifdef DUMP_RS			
+				DEBUG("Select returned <= 0\n");
+#endif
+				return -1;
+			}
+			
+		} else if (extPolling) {
+			tfApi->tfCheckPollingDes(ses);
+		} else {
+			DEBUG("Unhandled event on selecting occured!\n");
+		}
+	}
+
+	return 0;
+}
+
+
+#if 0
 int doConnection(struct InetConnection *conn)
 {
 	struct Session *ses = conn->member;
 	int res;
 	int max_fd;
 
-#ifndef _SYNC_SCSI
-	struct sockaddr_in addr;
-	int value;
-	int len = sizeof(addr);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(SYNC_PORT);
-	addr.sin_addr.s_addr = htonl(0x7f000001);
-	res = bind(ses->sSync, (struct sockaddr*)&addr, sizeof(addr));
-#endif
 	max_fd = conn->scli + 1;
 	for (;;) {
 		FD_SET(conn->scli, &ses->rop);
@@ -967,5 +1093,8 @@ int doConnection(struct InetConnection *conn)
 
 	return 0;
 }
+
+#endif
+
 
 

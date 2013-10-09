@@ -1,10 +1,10 @@
 CC=gcc
 CFLAGS=-Wall
-LDFLAGS=-lpthread
+LDFLAGS=
 
-define DEBUG 
-1
-endef
+#define DEBUG 
+#1
+#endef
 
 OS=$(shell uname)
 ARCH=$(shell uname -m)
@@ -29,12 +29,6 @@ OSSPEC_DIR=$(OS)
 export OSSPEC_DIR;
 export DEBUG_DIR;
 export CONTRIB_DIR;
-
-#OS Specific files
-#SPEC_FILES=$(OSSPEC_DIR)/tf_sg.c \
-#	   $(OSSPEC_DIR)/th_sg.h \
-#	   $(OSSPEC_DIR)/spec_linux.c \
-#	   $(OSSPEC_DIR)/spec_linux.h
 
 include $(OS)/Makefile.in
 
@@ -62,8 +56,6 @@ DAEMON_FILES=sock.c \
 	     conf_reader.c \
 	     target_conf.h \
 	     tf.h \
-	     param_helper.h \
-	     param_helper.c \
 	     spec.h \
 	     pdu.c \
 	     target.c \
@@ -82,11 +74,11 @@ DAEMON_OBJS=$(DAEMON_SRC:%.c=$(OBJDIR)/%.o)
 
 daemon:	dirs $(OBJDIR)/daemon
 
-$(DAEMON_OBJS): Makefile
+$(DAEMON_OBJS): Makefile $(OS)/Makefile.in
 
 $(OBJDIR)/daemon: $(DAEMON_OBJS)
 	@echo " [LD]  $@"
-	@$(CC) $(LDFLAGS) -o $@ $^
+	@$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	@rm -rf $(OBJDIR)/*.o $(OBJDIR)/$(CONTRIB_DIR)/*.o \
@@ -94,7 +86,7 @@ clean:
 	@echo "Removed intermediate files"
 
 distclean:
-	@rm -R $(OBJDIR)
+	@rm -Rf $(OBJDIR)
 
 $(OBJDIR)/%.o : %.c
 	@echo " [CC]  $*.c"

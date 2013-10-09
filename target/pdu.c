@@ -22,6 +22,7 @@ static int translateTf(struct Session *ses, struct Task *tsk);
 
 /*
 #define DUMP_PDU
+
 #define DUMP_LOGIN_PDUS
 */
 
@@ -289,6 +290,11 @@ static struct Task *getTask(struct InetConnection *conn, struct bhsRequest *req)
 	tsk->dataSegment = NULL;
 	tsk->intialRes = NULL;
 	tsk->pdus = conn->pending;
+	if (tsk->pdus == NULL) {
+		int i;
+		DEBUG("getTask: tsk->pdus is NULL\n");
+		i = *((int*)NULL);
+	}
 	
 	tsk->lun = req->lunL;
 		
@@ -876,7 +882,7 @@ int translateTfCommand(struct Session *ses, struct Task *tsk)
 /*	res = ses->cclass.tfSCSICommand(ses->tfHandle, cmd); */
 	cmd->classHandle = ses->cclass.handle;
 	cmd->targetHandle = ses->tfHandle;
-
+	
 	res = ses->cclass.tfSCSICommand(cmd); 
 
 	freePDUs(ses, &tsk->pdus);
@@ -884,7 +890,7 @@ int translateTfCommand(struct Session *ses, struct Task *tsk)
 	if (res == -1) { /* HARD ERROR */
 		cleanTask(ses, tsk);
 	} else {
-
+		ses->pendingCommands++;
 	}
 	return 0;
 }
@@ -1068,7 +1074,6 @@ int sesTaskOp(struct Session *ses)
 }
 
 
-
 int sesQueueTask(struct Session *ses, struct Task *tsk)
 {
 	int res;
@@ -1170,6 +1175,19 @@ int sesSCSIQueue(struct tfCommand *cmd)
 	return 0;
 }
 
+int sesSCSIQueuedResponse(struct tfCommand *cmd)
+{
+	struct Session *ses = cmd->ses;	
+	struct Task *tsk = tfCmd2Task(cmd);
+	if (tsk->immediate) {
+		tsk = (struct Task *)removeNode((struct DCirList *)tsk, (struct DCirList **)&ses->immediateTasks);		
+	} else {
+		tsk = (struct Task *)removeNode((struct DCirList *)tsk, (struct DCirList **)&ses->tasks);
+	}
+
+	return sesSCSICmdResponse(cmd);
+}
+
 #define SCSI_READ_LATER_WRITE	1
 #define SCSI_CMD_RESPONSE		0
 
@@ -1202,6 +1220,8 @@ int sesSCSIResponse(struct tfCommand *cmd, int how)
 
 	rtsk = tsk->intialRes;
 
+	ses->pendingCommands--;
+	
 	if (rtsk == NULL) {
 		rtsk = allocResponseTask(ses);
 		if (rtsk == NULL) {
@@ -1441,7 +1461,7 @@ int sendPDU(struct InetConnection *conn)
 {
 	struct ReadWriteOP *writeOP = &conn->writeOP;
 	struct PDUList *pending = conn->wpending;
-	struct Task *tsk;
+	/*struct Task *tsk;*/
 	struct ResponseTask *rtsk = conn->sending;
 	struct Session *ses = conn->member;
 
@@ -1457,9 +1477,7 @@ int sendPDU(struct InetConnection *conn)
 	*/
 
 	if ((writeOP->stage % 2) == 1) {/* phase not ended */
-		if (writeOP->stage == 5) {
-			tsk = conn->pndTask;
-		}
+		DEBUG("sendPDU: next writing\n");
 		res = sendOP(conn->scli, writeOP);
 		if (res < 0) { /* error or connection error */
 			DEBUG("sendPDU: writing error\n");
@@ -1568,32 +1586,6 @@ int sendPDU(struct InetConnection *conn)
 		ses->pdus_sent++;
 		ses->bytes_write += writeOP->expectedLen;
 		case 2:
-#if 0
-		if (pending->pdu.dataSegmentLength > 0) {
-			
-			writeOP->stage = 3;
-			writeOP->expectedLen = ((4 - (pending->pdu.dataSegmentLength % 4)) % 4)
-				+ pending->pdu.dataSegmentLength;
-			writeOP->perfomedLen = 0;
-			writeOP->buffer = pending->pdu.data;
-
-			if (conn->dataDigest == ISP_DIG_CRC32C) {
-				writeOP->stage |= RWOP_CRCFLAG;
-				writeOP->dataCRC = crc32c(pending->pdu.data, pending->pdu.dataSegmentLength);
-			}
-			res = sendOP(conn->scli, writeOP);
-			if (res < 0) { /* error or connection error */
-				/* FIXME! */
-				DEBUG("sendPDU: writing error 3\n");
-				return res;
-			} else if (res == RWOP_TRANS_NOT_ALL) {
-				return RWPDU_NOTALL;
-			}
-
-			ses->bytes_write += writeOP->expectedLen;
-		}	
-	case 4:
-#endif
 
 		/****************************/
 		/* FIXME!! Perfoming logout */

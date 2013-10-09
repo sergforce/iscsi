@@ -5,7 +5,6 @@
 #include "../tf.h"
 #include "../iscsi_param.h"
 #include "../conf_reader.h"
-#include "../param_helper.h"
 #include "../iscsi_session.h"
 
 #include <stdio.h>
@@ -16,8 +15,13 @@
 #include "wnaspi/scsidefs.h"
 
 #include <windows.h>
-#include <devioctl.h>
+
+#ifndef _MSC_VER
+#include <ddk/ntddscsi.h>
+#else
 #include <ntddscsi.h>
+#endif
+
 #include <stddef.h>
 
 #define NTDDK
@@ -144,7 +148,7 @@ void *miniport_tfAttach(void *handle, struct Session *ses)
 	struct confElement *targetInfo = (struct confElement *)ses->params[ISP_TARGETNAME].pvalue;
 	struct miniportData *md;
 	BOOL status = 0;
-    ULONG length = 0, /*errorCode = 0,*/ returned = 0;
+	ULONG returned = 0;
 	int res;
 
 	md = (struct miniportData *)malloc(sizeof(struct miniportData));
@@ -164,7 +168,7 @@ void *miniport_tfAttach(void *handle, struct Session *ses)
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
     if (md->fileHandle == INVALID_HANDLE_VALUE) {
-       DEBUG2("Error opening %s. Error: %d\n", md->device, GetLastError());
+       DEBUG2("Error opening %s. Error: %ld\n", md->device, GetLastError());
 	   free(md);
        return NULL;
     }
@@ -180,7 +184,7 @@ void *miniport_tfAttach(void *handle, struct Session *ses)
     status = DeviceIoControl(md->fileHandle, IOCTL_SCSI_GET_CAPABILITIES, NULL, 0,
                              &md->capabilities, sizeof(IO_SCSI_CAPABILITIES), &returned, FALSE);
     if (!status ) {
-       DEBUG1( "Error in io control; error was %d\n", GetLastError() );
+       DEBUG1( "Error in io control; error was %ld\n", GetLastError() );
    	   free(md);
        return NULL;
     }
@@ -274,6 +278,8 @@ nextSRB:
 
 		ppdwb->sptd.DataBuffer = fd.newPointer;
 		ppdwb->sptd.DataTransferLength = fd.newLen;
+	} else {
+		res = 0;
 	}
 
 	if (ppdwb->sptd.Cdb[0] == 0xa0) {
@@ -324,7 +330,7 @@ nextSRB:
 		cmd->writedCount = 0;
 		cmd->senseLen = 0;
 
-		DEBUG2("miniport_tfSCSICommand: DeviceIoControl returned 0 (%x) CMD=0x%02x \n", GetLastError(),
+		DEBUG2("miniport_tfSCSICommand: DeviceIoControl returned 0 (%ld) CMD=0x%02x \n", GetLastError(),
 			ppdwb->sptd.Cdb[0]);
 	}
 

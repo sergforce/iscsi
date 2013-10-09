@@ -16,6 +16,8 @@
 #include "../debug/iscsi_debug.h"
 
 #include "tf_miniport.h"
+#include "wnaspi/srbcmn.h"
+#include "wnaspi/srb32.h"
 #include "tf_aspi.h"
 #include "service.h"
 

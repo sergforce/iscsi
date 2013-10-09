@@ -80,7 +80,6 @@ struct ReadWriteOP {
 
 	uint8_t *buffer;
 
-//	uint32_t extra[4];
 
 	uint32_t dataCRC;
 
@@ -114,7 +113,7 @@ struct Task {
 	struct Counter unsolDataSN; /* for unsolicated SCSI Data-Out */
 	uint32_t dataSNr2tSN; /* for SCSI Data-In and R2T */
 
-	//struct  unsolicatedR2T[MAX_UNSOLICATEDR2T];
+	/* struct  unsolicatedR2T[MAX_UNSOLICATEDR2T]; */
 
 	struct R2T *r2tRes;
 	struct ResponseTask *intialRes;
@@ -284,6 +283,9 @@ struct Session {
 
 	struct tfClass cclass;
 
+	unsigned pendingCommands;
+	
+	SOCKET maxfd;
 	/* reading operations */
 	fd_set	rop;
 	/* writing operations */
@@ -298,37 +300,42 @@ struct Session {
 	int64_t pdus_recv;
 };
 
-
+#define WORLD_BUFFALLOC_COUNT		2
 struct World {
 	struct Session *sesions;
 	unsigned nSessions;
 	unsigned nTotalConnections;
-/*	
-#ifdef WIN32
-	HANDLE hMutex;
-#endif
-*/	
+
 	spec_world_t platformData;
 
 	struct confElement *trgs;
 
 	struct configuration cnf;
-	struct BufferAllocator buffAlloc[2]; /* buffers policy */
+	struct BufferAllocator buffAlloc[WORLD_BUFFALLOC_COUNT]; /* buffers policy */
 
 	int nApis;
 	struct tfClass apis[MAX_TFCLASES];
 };
 
-/*
-int lockWorld(struct World *wrld);
-int releaseWorld(struct World *wrld);
-*/
+
+#define WAIT_FD_WRITE 1
+#define WAIT_FD_READ  0
+
+int cleanWaitigFd(struct Session *ses, SOCKET fd, int typeRW);
+int setWaitigFd(struct Session *ses, SOCKET fd, int typeRW);
+int isSetWaitigFd(struct Session *ses, SOCKET fd, int typeRW);
+int initWaitigFd(struct Session *ses);
 
 int initWorld(struct World *wrld);
 
 
 #define WORLD_SMALL_BUFFER		(256 - sizeof(struct Buffer))
 #define WORLD_BIG_BUFFER		(65536 - sizeof(struct Buffer))
+
+#define INIT_WORLD_BUFFALLOC		{ \
+		{WORLD_BIG_BUFFER, 4, 4, 4}, \
+		{WORLD_SMALL_BUFFER, 2, 4, 2} \
+	}
 
 #define DEF_MAX_RCV_SEG_LENGTH	8192
 

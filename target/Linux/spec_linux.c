@@ -65,7 +65,7 @@ int beginigAcceptConnections(struct World *world)
 }
 
 #define DEFAULT_TARGET_NAME "iqn:deftarget"
-#define DEFAULT_TARGET_DEV  "/dev/sg0"
+#define DEFAULT_TARGET_DEV  "/dev/sg1"
 /* creating BOGUS configuration */
 int initConfiguration(struct configuration *cnf)
 {

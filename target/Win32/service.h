@@ -6,7 +6,8 @@ extern HANDLE hRunningService;
 #endif
 
 /* Make program as Win32 Service Application othewise common console */
+#ifndef _DEBUG2
 #define _SERVICE
-
+#endif
 
 #endif

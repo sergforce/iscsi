@@ -1,9 +1,6 @@
 #ifndef _TF_ASPI_H
 #define _TF_ASPI_H
 
-
-typedef void *LPSRB;
-
 typedef struct tagASPIDATA {
 	int nDevice;
 	HANDLE hEvent; /* sync event */

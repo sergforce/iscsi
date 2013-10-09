@@ -5,7 +5,6 @@
 #include "../tf.h"
 #include "../iscsi_param.h"
 #include "../conf_reader.h"
-#include "../param_helper.h"
 #include "../iscsi_session.h"
 
 #include <stdlib.h>
@@ -327,6 +326,8 @@ nextSRB:
 		/*if (res == 0) {
 			goto fill_sence;
 		}*/
+	} else {
+		res = 0;
 	}
 
 
