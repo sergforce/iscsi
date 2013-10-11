@@ -28,15 +28,15 @@ struct tfClass knownClasses[] = {
 
 void *threadRoutine(void *arg)
 {
-	int sockfd = (int)arg;
+	int sockfd = (intptr_t)arg;
 	pthread_detach(pthread_self());
-	return (void *)doClient2(sockfd);	
+	return (void *)(intptr_t)doClient2(sockfd);
 }
 
 int createNewClientThread(SOCKET scli)
 {
 	pthread_t tid;
-	return pthread_create(&tid, NULL, threadRoutine, (void *)scli);
+	return pthread_create(&tid, NULL, threadRoutine, (void *)(intptr_t)scli);
 }
 void initWorldMutex(struct World *world)
 {
@@ -64,6 +64,7 @@ int beginigAcceptConnections(struct World *world)
 	return 0;
 }
 
+#if 0
 #define DEFAULT_TARGET_NAME "iqn:deftarget"
 #define DEFAULT_TARGET_DEV  "/dev/sg1"
 /* creating BOGUS configuration */
@@ -77,4 +78,13 @@ int initConfiguration(struct configuration *cnf)
 	defTargetDevName = addElementFill(cnf, defTarget, SG_DEVICE_NAME, DEFAULT_TARGET_DEV);
 		
 	return 0;
+}
+#endif
+
+extern char inifile[];
+int initConfigurationFromINI(struct configuration *cnf, const char* filename);
+
+int initConfiguration(struct configuration *cnf)
+{
+	return initConfigurationFromINI(cnf, inifile);
 }
