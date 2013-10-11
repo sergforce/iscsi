@@ -141,7 +141,7 @@ static int fillIoctlTargetData(struct confElement *head, struct miniportData *md
 		if ((scsiPort == NULL) || (pathId == NULL) || (lun == NULL) || (targetId == NULL)) {
 			return -1;
 		}
-		snprintf(md->device, DEVICE_LEN, "\\\\.\\Scsi%d", &md->ScsiPortNumber);
+		snprintf(md->device, DEVICE_LEN, "\\\\.\\Scsi%d", md->ScsiPortNumber);
 	}
 
 	return 0;
@@ -226,7 +226,15 @@ int miniport_tfSCSICommand(struct tfCommand *cmd)
 		cmd->senseLen = 0;
 		goto miniport_exit;
 	}
-
+#ifdef DEBUG
+    printf(" [%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x::%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x] len=%d wc=%d rrc=%d\n",
+            cmd->cdbBytes[0], cmd->cdbBytes[1], cmd->cdbBytes[2], cmd->cdbBytes[3],
+            cmd->cdbBytes[4], cmd->cdbBytes[5], cmd->cdbBytes[6], cmd->cdbBytes[7],
+            cmd->cdbBytes[8], cmd->cdbBytes[9], cmd->cdbBytes[10], cmd->cdbBytes[11],
+            cmd->cdbBytes[12], cmd->cdbBytes[13], cmd->cdbBytes[14], cmd->cdbBytes[15],
+            cmd->cdbLen,
+            cmd->writeCount, cmd->residualReadCount);
+#endif
 	if (md->ReadOnly)	{
 		/* Doing read only check */
 		// Allowed commands
@@ -323,6 +331,11 @@ int miniport_tfSCSICommand(struct tfCommand *cmd)
 		ppdwb->sptd.CdbLength = 16;
 	}
 
+    if ((cmd->writeCount > 0) && (cmd->residualReadCount > 0))
+    {
+        printf("Both read & write!!!\n");
+    }
+
 	if (cmd->writeCount > 0) {
 	    ppdwb->sptd.DataIn = SCSI_IOCTL_DATA_OUT;
 		ppdwb->sptd.DataBuffer = cmd->imWriteBuffer->data;
@@ -339,6 +352,7 @@ int miniport_tfSCSICommand(struct tfCommand *cmd)
 
 	/* FRAGMENTING IF NEEDED */
 	if (ppdwb->sptd.DataTransferLength > FRAG_LENGTH) {
+        DEBUG("Fragmentation\n");
 		fd.origPointer = ppdwb->sptd.DataBuffer;
 		fd.origLen = ppdwb->sptd.DataTransferLength;
 

@@ -51,9 +51,9 @@ const int* Search[] = {
 };
 
 int paramcmp(const char *value, const char *x) {
-	int len = strlen(value);
+	size_t len = strlen(value);
 	if ((strncmp(value, x, len)==0) && ( *(x + len) == '=' ))
-		return len + 1;
+		return (int)(len + 1);
 	return 0;
 }
 
@@ -283,7 +283,7 @@ static int parseConnParam(struct ParseParams *prms, int index, const char *value
 
 static int parseSessParam(struct ParseParams *prms, int index, const char *value)
 {
-	int len;
+	size_t len;
 	int tmp;
 	const char *ptr;
 	void *pptr;

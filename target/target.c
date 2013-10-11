@@ -515,9 +515,9 @@ int doLogin(struct loginStruct *ls)
 		return -1;
 	}
 
-	if (ap.NSG == 3) {
-		goto end_none_auth;
-	}
+//	if (ap.NSG == 3) {
+//		goto end_none_auth;
+//	}
 
 	ap.pending = allocParamPDU(&ap);
 	ap.pending->pdu.dataSeg = pp.inBuff;
@@ -590,7 +590,7 @@ int doLogin(struct loginStruct *ls)
 		}		
 	}
 
-end_none_auth:
+//end_none_auth:
 	ls->statSN = ap.statSN;
 	ls->cmdSN = ap.cmdSN;
 
